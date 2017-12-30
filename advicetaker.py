@@ -9,7 +9,7 @@ def checkVow(val):
 
 
 
-def check_this(Knowledge_Base,x,y):
+def checkStatement(Knowledge_Base,x,y):
 	straight = {}
 	reverse = {}
 	if bool(Knowledge_Base[x]) == False:
@@ -49,7 +49,7 @@ def backwardInfer(prev,next_val,Knowledge_Base,match,container):
 
 
 
-def generation(Knowledge_Base,x,y,bol):
+def updateKB(Knowledge_Base,x,y,bol):
 	if checkPlurality(Knowledge_Base,x) == 1:
 		ans = x.title()
 		if bol:
@@ -132,21 +132,21 @@ def store_Knowledge_Base(Knowledge_Base,text1,knowledge):
 			if x_val != None and y_val != None:
 				if bool(Knowledge_Base[x_val]) == False:
 					print ("Ok.")
-				elif Knowledge_Base[x_val].has_key(y_val) or check_this(Knowledge_Base,x_val,y_val):
+				elif Knowledge_Base[x_val].has_key(y_val) or checkStatement(Knowledge_Base,x_val,y_val):
 					print ("I know.")
 				else:
 					print ("Ok.")
 
 			if x_val == None:
 				insert_input = 'What is the singular form of '+match_enter_in.group(2)+ "?" +'\n'
-				s_output_b = raw_input(insert_input).lower()
+				s_output_b = singularize(match_enter_in.group(2))
 				if s_output_b == "na":	
 					x_val = (x,x)
 				else:
 					x_val = (s_output_b,x)
 			if y_val == None:
 				insert_input = 'What is the singular form of '+match_enter_in.group(6)+ "?" +'\n'
-				s_output_a = raw_input(insert_input).lower()
+				s_output_a = singularize(match_enter_in.group(6))
 				if s_output_a == "na":
 					y_val = (y,y)
 				else:
@@ -160,7 +160,7 @@ def store_Knowledge_Base(Knowledge_Base,text1,knowledge):
 			if x_val != None and y_val != None:
 				if bool(Knowledge_Base[x_val]) == False:
 					print ("Ok.")
-				elif Knowledge_Base[x_val].has_key(y_val) or check_this(Knowledge_Base,x_val,y_val):
+				elif Knowledge_Base[x_val].has_key(y_val) or checkStatement(Knowledge_Base,x_val,y_val):
 					print ("I know.")
 				else:
 					print ("Ok.")
@@ -229,10 +229,10 @@ def run(User_Input,Knowledge_Base):
 
 				
 				if checkPlurality(Knowledge_Base,x):
-					res = generation(Knowledge_Base,x.lower(),y[0][1],y[1])
+					res = updateKB(Knowledge_Base,x.lower(),y[0][1],y[1])
 					c = c + 1
 				else:
-					res = generation(Knowledge_Base,x.lower(),y[0][0],y[1])
+					res = updateKB(Knowledge_Base,x.lower(),y[0][0],y[1])
 					c = c + 1
 			else:
 				check_what = 3
@@ -240,10 +240,10 @@ def run(User_Input,Knowledge_Base):
 				ans = match_what.group(1)
 				y = revList[0]
 				if checkPlurality(Knowledge_Base,x):
-					res = generation(Knowledge_Base,y[0][1],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
 					c = c + 1
 				else:
-					res = generation(Knowledge_Base,y[0][0],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
 					c = c + 1				
 		else:
 			res = "I don't know anything about " + x+"."
@@ -259,18 +259,18 @@ def run(User_Input,Knowledge_Base):
 			if c <= length:
 				y = regList[c]
 				if checkPlurality(Knowledge_Base,x):
-					res = generation(Knowledge_Base,x.lower(),y[0][1],y[1])
+					res = updateKB(Knowledge_Base,x.lower(),y[0][1],y[1])
 					c = c + 1
 				else:
-					res = generation(Knowledge_Base,x.lower(),y[0][0],y[1])
+					res = updateKB(Knowledge_Base,x.lower(),y[0][0],y[1])
 					c = c + 1
 			elif c-length-1 < len(revList):
 				y = revList[c - length-1]
 				if checkPlurality(Knowledge_Base,x):
-					res = generation(Knowledge_Base,y[0][1],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
 					c = c + 1
 				else:
-					res = generation(Knowledge_Base,y[0][0],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
 					c = c + 1
 			else:
 				res = "I don't know anything else about "+x+"."
@@ -280,10 +280,10 @@ def run(User_Input,Knowledge_Base):
 			if c <= length:
 				y = revList[c]
 				if checkPlurality(Knowledge_Base,x):
-					res = generation(Knowledge_Base,y[0][1],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
 					c = c + 1
 				else:
-					res = generation(Knowledge_Base,y[0][0],x.lower(),y[1])
+					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
 					c = c + 1
 			else:
 				res = "I don't know anything else about "+x +"."
@@ -305,9 +305,9 @@ def run(User_Input,Knowledge_Base):
 			x_val = extract(1,Knowledge_Base,x)
 			y_val = extract(1,Knowledge_Base,y)
 
-		if x_val == None or y_val == None or (Knowledge_Base[x_val].has_key(y_val) == False and check_this(Knowledge_Base,x_val,y_val) == False):
+		if x_val == None or y_val == None or (Knowledge_Base[x_val].has_key(y_val) == False and checkStatement(Knowledge_Base,x_val,y_val) == False):
 			res = "I'm not sure given what you've told me so far"
-		elif check_this(Knowledge_Base,x_val,y_val) or Knowledge_Base[x_val][y_val] == True:
+		elif checkStatement(Knowledge_Base,x_val,y_val) or Knowledge_Base[x_val][y_val] == True:
 			res = ("Yes.")
 		elif Knowledge_Base[x_val][y_val] == False:
 			res = ("No.")
