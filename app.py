@@ -2,12 +2,46 @@ import os
 import sys
 import json
 from datetime import datetime
+import advicetaker
+import pylibmc
+import os
+
 
 import requests
 from flask import Flask, request
 
-app = Flask(__name__)
 
+servers = os.environ.get('MEMCACHIER_SERVERS', '').split(',')
+user = os.environ.get('MEMCACHIER_USERNAME', '')
+passw = os.environ.get('MEMCACHIER_PASSWORD', '')
+
+mc = pylibmc.Client(servers, binary=True,
+                    username=user, password=passw,
+                    behaviors={
+                      # Faster IO
+                      "tcp_nodelay": True,
+
+                      # Keep connection alive
+                      'tcp_keepalive': True,
+
+                      # Timeout for set/get requests
+                      'connect_timeout': 2000, # ms
+                      'send_timeout': 750 * 1000, # us
+                      'receive_timeout': 750 * 1000, # us
+                      '_poll_timeout': 2000, # ms
+
+                      # Better failover
+                      'ketama': True,
+                      'remove_failed': 1,
+                      'retry_timeout': 2,
+                      'dead_timeout': 30,
+                    })
+
+
+
+app = Flask(__name__)
+kb = {}
+mc.set("kb",kb)
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -40,7 +74,15 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
 
-                    send_message(sender_id, "roger that!")
+
+                    kb = mc.get("kb")
+                    send = advicetaker.run(message_text,kb)
+
+                    mc.set("kb",kb)
+
+
+
+                    send_message(sender_id, send)
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
