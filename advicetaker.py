@@ -2,195 +2,173 @@ import re
 from pattern.en import pluralize, singularize
 
 
-
-def checkVow(val):
-	return val == "o" or val == "i" or val == "e" or val == "a" or val == "u"
-
+def isVowel(val):
+	return val in ('a', 'e', 'i', 'o', 'u')
 
 
-
-def checkStatement(Knowledge_Base,x,y):
-	straight = {}
-	reverse = {}
-	if bool(Knowledge_Base[x]) == False:
-		for fact in Knowledge_Base:
-			backwardInfer(fact,fact,Knowledge_Base,x,reverse)
-		return reverse.has_key(y)
+def verifyStatement(knowledgeBase,x,y):
+	forwardSearch = {}
+	reverseSearch = {}
+	if bool(knowledgeBase[x]) == False:
+		for fact in knowledgeBase:
+			backwardInfer(fact,fact,knowledgeBase,x,reverseSearch)
+		return reverseSearch.has_key(y)
 	else:
-		forwardInfer(1,Knowledge_Base,x,straight)
-		for fact in Knowledge_Base:
-			backwardInfer(fact,fact,Knowledge_Base,x,reverse)
-		return straight.has_key(y) or reverse.has_key(y)
-
-
-def forwardInfer(checker,Knowledge_Base,match,container):
-	if bool(Knowledge_Base[match]):
-		for fact in Knowledge_Base[match]:
-			if container.has_key(fact) == False:
-				if Knowledge_Base[match][fact]:
-					container[fact] = Knowledge_Base[match][fact]
-					forwardInfer(-1,Knowledge_Base,fact,container)
-				elif Knowledge_Base[match][fact] == False  and checker == 1:
-					container[fact] = Knowledge_Base[match][fact]
-	
-
-
-def backwardInfer(prev,next_val,Knowledge_Base,match,container):
-	if bool(Knowledge_Base[next_val]):
-		for fact in Knowledge_Base[next_val]:
-			if Knowledge_Base[next_val][fact] == True and fact != match:
-				backwardInfer(prev,fact,Knowledge_Base,match,container)
-			elif fact == match:
-				if container.has_key(prev) == False:
-					container[prev] = Knowledge_Base[next_val][fact]
+		forwardInfer(True,knowledgeBase,x,forwardSearch)
+		for fact in knowledgeBase:
+			backwardInfer(fact,fact,knowledgeBase,x,reverseSearch)
+		return forwardSearch.has_key(y) or reverseSearch.has_key(y)
 
 
 
+def forwardInfer(isFoward,knowledgeBase,isMatch,statement):
+	if bool(knowledgeBase[isMatch]):
+		for fact in knowledgeBase[isMatch]:
+			if statement.has_key(fact) == False:
+				if knowledgeBase[isMatch][fact]:
+					statement[fact] = knowledgeBase[isMatch][fact]
+					forwardInfer(False,knowledgeBase,fact,statement)
+				elif knowledgeBase[isMatch][fact] == False  and isFoward == True:
+					statement[fact] = knowledgeBase[isMatch][fact]
 
 
 
-def updateKB(Knowledge_Base,x,y,bol):
-	if checkPlurality(Knowledge_Base,x) == 1:
-		ans = x.title()
-		if bol:
-			ans +=" are"
+def backwardInfer(previousVal,nextVal,knowledgeBase,isMatch,statement):
+	if bool(knowledgeBase[nextVal]):
+		for fact in knowledgeBase[nextVal]:
+			if knowledgeBase[nextVal][fact] == True and fact != isMatch:
+				backwardInfer(previousVal,fact,knowledgeBase,isMatch,statement)
+			elif fact == isMatch:
+				if statement.has_key(previousVal) == False:
+					statement[previousVal] = knowledgeBase[nextVal][fact]
+
+
+
+def updateKB(knowledgeBase,x,y,relationship):
+	if getScenario(knowledgeBase,x) == 1:
+		response = x.title()
+		if relationship:
+			response +=" are"
 		else:
-			ans += " are not"
-	elif checkPlurality(Knowledge_Base,x) == 2:
-		ans = x.title()
-		if bol:
-			ans +=" is"
+			response += " are not"
+	elif getScenario(knowledgeBase,x) == 2:
+		response = x.title()
+		if relationship:
+			response +=" is"
 		else:
-			ans +=" is not"
-		if checkPlurality(Knowledge_Base,y) == 1:
-			y = extract(1,Knowledge_Base,y)[0]
-	elif checkPlurality(Knowledge_Base,x) == 3:
-		if checkVow(x[0]):
-			ans = "An "+x
+			response +=" is not"
+		if getScenario(knowledgeBase,y) == 1:
+			y = extract(1,knowledgeBase,y)[0]
+	elif getScenario(knowledgeBase,x) == 3:
+		if isVowel(x[0]):
+			response = "An "+x
 		else:
-			ans = "A "+x
-		if bol:
-			ans +=" is"
+			response = "A "+x
+		if relationship:
+			response +=" is"
 		else:
-			ans +=" is not"
-	if checkPlurality(Knowledge_Base,y) == 3:
-		if checkVow(y[0]):
-			ans +=" an "
-			ans += y
+			response +=" is not"
+	if getScenario(knowledgeBase,y) == 3:
+		if isVowel(y[0]):
+			response +=" an "
+			response += y
 		else:
-			ans +=" a "
-			ans += y
+			response +=" a "
+			response += y
 	else:
-		ans += " "
-		ans +=y
-	return ans
+		response += " "
+		response +=y
+	return response
 
 
 
-
-
-
-
-def checkPlurality(Knowledge_Base,i):
-	for fact in Knowledge_Base:
-		if fact[0] != i and fact[1] == i:
+def getScenario(knowledgeBase,fact):
+	for fact in knowledgeBase:
+		if fact[0] != fact and fact[1] == fact:
 			return 1
-		elif fact[0] == i and fact[1] == i:
+		elif fact[0] == fact and fact[1] == fact:
 			return 2
-		elif fact[1] != i and fact[0] == i:
+		elif fact[1] != fact and fact[0] == fact:
 			return 3
 	return None
 
 
 
-def extract(num,Knowledge_Base,match):
-	for fact in Knowledge_Base:
-		if fact[num] == match:
+def extract(input,knowledgeBase,fact):
+	for fact in knowledgeBase:
+		if fact[input] == fact:
 			return fact
 	return None
 
 
 
-def store_Knowledge_Base(Knowledge_Base,text1,knowledge):
-	case_enter_in = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
-	match_enter_in = re.search(case_enter_in,text1)
 
 
-	if match_enter_in:
-		c_val = 1
-		check = 0
+def submitFact(knowledgeBase,input):
+	template = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
+	statement = re.search(template,input)
 
-		x = match_enter_in.group(2).lower()
-		knowledge += c_val
-		y = match_enter_in.group(6).lower()
-			
-		if match_enter_in.group(3) == "are":
-			c_val+=1
-			x_val = extract(1,Knowledge_Base,x)
-			y_val = extract(1,Knowledge_Base,y)
-
-			if x_val != None and y_val != None:
-				if bool(Knowledge_Base[x_val]) == False:
+	if statement:
+		x = statement.group(2).lower()
+		y = statement.group(6).lower()		
+		if statement.group(3) == "are":
+			subject = extract(1,knowledgeBase,x)
+			target = extract(1,knowledgeBase,y)
+			if subject != None and target != None:
+				if bool(knowledgeBase[subject]) == False:
 					print ("Ok.")
-				elif Knowledge_Base[x_val].has_key(y_val) or checkStatement(Knowledge_Base,x_val,y_val):
+				elif knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
 					print ("I know.")
 				else:
 					print ("Ok.")
-
-			if x_val == None:
-				insert_input = 'What is the singular form of '+match_enter_in.group(2)+ "?" +'\n'
-				s_output_b = singularize(match_enter_in.group(2))
-				if s_output_b == "na":	
-					x_val = (x,x)
+			if subject == None:
+				question = 'What is the singular form of '+statement.group(2)+ "?" +'\n'
+				singular = singularize(statement.group(2))
+				if singular == "na":	
+					subject = (x,x)
 				else:
-					x_val = (s_output_b,x)
-			if y_val == None:
-				insert_input = 'What is the singular form of '+match_enter_in.group(6)+ "?" +'\n'
-				s_output_a = singularize(match_enter_in.group(6))
-				if s_output_a == "na":
-					y_val = (y,y)
+					subject = (singular,x)
+			if target == None:
+				question = 'What is the singular form of '+statement.group(6)+ "?" +'\n'
+				singularNegative = singularize(statement.group(6))
+				if singularNegative == "na":
+					target = (y,y)
 				else:
-					y_val = (s_output_a,y)  
-			
-
-		elif match_enter_in.group(3) == "is":
-			x_val = extract(0,Knowledge_Base,x)
-			y_val = extract(0,Knowledge_Base,y)
-
-			if x_val != None and y_val != None:
-				if bool(Knowledge_Base[x_val]) == False:
+					target = (singularNegative,y)  
+		elif statement.group(3) == "is":
+			subject = extract(0,knowledgeBase,x)
+			target = extract(0,knowledgeBase,y)
+			if subject != None and target != None:
+				if bool(knowledgeBase[subject]) == False:
 					print ("Ok.")
-				elif Knowledge_Base[x_val].has_key(y_val) or checkStatement(Knowledge_Base,x_val,y_val):
+				elif knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
 					print ("I know.")
 				else:
 					print ("Ok.")
-
-
-			if x_val == None:
-				insert_input = 'What is the plural form of '+match_enter_in.group(2)+"?" +'\n'
-				p_output_a = pluralize(match_enter_in.group(2))
-				print("Test: " + p_output_a )
-				if p_output_a == "na":
-					p_output_a = x
-				x_val = (x,p_output_a)
-			if y_val == None:
-				insert_input = 'What is the plural form of '+match_enter_in.group(6)+"?" +'\n'
-				p_output_b = pluralize(match_enter_in.group(6))
-				print("Test: " + p_output_b )
-				if p_output_b == "na":
-					p_output_b = y
-				y_val = (y,p_output_b)
+			if subject == None:
+				question = 'What is the plural form of '+statement.group(2)+"?" +'\n'
+				plural = pluralize(statement.group(2))
+				print("Test: " + plural )
+				if plural == "na":
+					plural = x
+				subject = (x,plural)
+			if target == None:
+				question = 'What is the plural form of '+statement.group(6)+"?" +'\n'
+				pluralNegative = pluralize(statement.group(6))
+				print("Test: " + pluralNegative )
+				if pluralNegative == "na":
+					pluralNegative = y
+				target = (y,pluralNegative)
 			
-			
-		if Knowledge_Base.has_key(x_val) == False:
-			Knowledge_Base[x_val] = {}
-		if Knowledge_Base.has_key(y_val) == False:
-			Knowledge_Base[y_val] = {}
-		if match_enter_in.group(4) == None:
-			Knowledge_Base[x_val][y_val] = True
+		if knowledgeBase.has_key(subject) == False:
+			knowledgeBase[subject] = {}
+		if knowledgeBase.has_key(target) == False:
+			knowledgeBase[target] = {}
+		if statement.group(4) == None:
+			knowledgeBase[subject][target] = True
 		else :
-			Knowledge_Base[x_val][y_val] = False
-	return Knowledge_Base
+			knowledgeBase[subject][target] = False
+	return knowledgeBase
 
 
 
@@ -199,133 +177,125 @@ def store_Knowledge_Base(Knowledge_Base,text1,knowledge):
 
 
 
-def run(User_Input,Knowledge_Base):
+def run(input,knowledgeBase):
 
-	case_what = re.compile("What do you know about ([A-z]+)?")
-	match_what = re.search(case_what,User_Input)
-	searcher = {}
-	searcherRev = {}
-	res="Got it!"
-	if match_what:
-		c = 0
-		check = 1
-		check_what = 1
-		x = match_what.group(1).lower()
-		x_val = extract(0,Knowledge_Base,x)
-		num = checkPlurality(Knowledge_Base,x)
-		if x_val == None:
-			x_val = extract(1,Knowledge_Base,x)
+	template = re.compile("What do you know about ([A-z]+)?")
+	statement = re.search(template,input)
+	searchGraph = {}
+	reverseGraph = {}
+	response = "Got it!"
+	statementExists = False
+	if statement:
+		counter = 0
+		statementExists = True
+		isNew = True
+		x = statement.group(1).lower()
+		subject = extract(0,knowledgeBase,x)
+		num = getScenario(knowledgeBase,x)
+		if subject == None:
+			subject = extract(1,knowledgeBase,x)
 
-		if x_val != None:
-			forwardInfer(1,Knowledge_Base,x_val,searcher)
-			for fact in Knowledge_Base:
-				backwardInfer(fact,fact,Knowledge_Base,x_val,searcherRev)
-			if bool(Knowledge_Base[x_val]):
-				regList = searcher.items()
-				revList = searcherRev.items()
-				ans = match_what.group(1)
+		if subject != None:
+			forwardInfer(True,knowledgeBase,subject,searchGraph)
+			for fact in knowledgeBase:
+				backwardInfer(fact,fact,knowledgeBase,subject,reverseGraph)
+			if bool(knowledgeBase[subject]):
+				regList = searchGraph.items()
+				revList = reverseGraph.items()
+				ans = statement.group(1)
 
 				y = regList[0]
 
 				
-				if checkPlurality(Knowledge_Base,x):
-					res = updateKB(Knowledge_Base,x.lower(),y[0][1],y[1])
-					c = c + 1
+				if getScenario(knowledgeBase,x):
+					response = updateKB(knowledgeBase,x.lower(),y[0][1],y[1])
+					counter = counter + 1
 				else:
-					res = updateKB(Knowledge_Base,x.lower(),y[0][0],y[1])
-					c = c + 1
+					response = updateKB(knowledgeBase,x.lower(),y[0][0],y[1])
+					counter = counter + 1
 			else:
-				check_what = 3
-				revList = searcherRev.items()
-				ans = match_what.group(1)
+				isNew = False
+				revList = reverseGraph.items()
+				ans = statement.group(1)
 				y = revList[0]
-				if checkPlurality(Knowledge_Base,x):
-					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
-					c = c + 1
+				if getScenario(knowledgeBase,x):
+					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
+					counter = counter + 1
 				else:
-					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
-					c = c + 1				
+					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
+					counter = counter + 1				
 		else:
-			res = "I don't know anything about " + x+"."
+			response = "I don't know anything about " + x+"."
 
 
 
-	case_else = re.compile("Anything else?")
-	match_else = re.search(case_else,User_Input)
+	templateElse = re.compile("Anything else?")
+	statementElse = re.search(templateElse,input)
 
-	if match_else and check == 1:
-		if check_what == 1:
+	if statementElse and statementExists == True:
+		if isNew == True:
 			length = len(regList)-1
-			if c <= length:
+			if counter <= length:
 				y = regList[c]
-				if checkPlurality(Knowledge_Base,x):
-					res = updateKB(Knowledge_Base,x.lower(),y[0][1],y[1])
-					c = c + 1
+				if getScenario(knowledgeBase,x):
+					response = updateKB(knowledgeBase,x.lower(),y[0][1],y[1])
+					counter = counter + 1
 				else:
-					res = updateKB(Knowledge_Base,x.lower(),y[0][0],y[1])
-					c = c + 1
+					response = updateKB(knowledgeBase,x.lower(),y[0][0],y[1])
+					counter = counter + 1
 			elif c-length-1 < len(revList):
-				y = revList[c - length-1]
-				if checkPlurality(Knowledge_Base,x):
-					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
-					c = c + 1
+				y = revList[counter - length-1]
+				if getScenario(knowledgeBase,x):
+					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
+					counter = counter + 1
 				else:
-					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
-					c = c + 1
+					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
+					counter = counter + 1
 			else:
-				res = "I don't know anything else about "+x+"."
-				res = res
+				response = "I don't know anything else about "+x+"."
+				response = response
 		else:
 			length = len(revList)-1
-			if c <= length:
+			if counter <= length:
 				y = revList[c]
-				if checkPlurality(Knowledge_Base,x):
-					res = updateKB(Knowledge_Base,y[0][1],x.lower(),y[1])
-					c = c + 1
+				if getScenario(knowledgeBase,x):
+					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
+					counter = counter + 1
 				else:
-					res = updateKB(Knowledge_Base,y[0][0],x.lower(),y[1])
-					c = c + 1
+					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
+					counter = counter + 1
 			else:
-				res = "I don't know anything else about "+x +"."
-				res = res
+				response = "I don't know anything else about "+x +"."
+				response = response
 
 
 
-	case_answer = re.compile("(Is|Are)+ (a |an )?([A-z]+) (a |an )?([A-z]+)\?")
-	match_answer = re.search(case_answer,User_Input)
-	if match_answer:
-		check = 0
-		x = match_answer.group(3).lower()
-		y = match_answer.group(5).lower()
-		num = match_answer.group(1).lower()
+	templateAnswer = re.compile("(Is|Are)+ (a |an )?([A-z]+) (a |an )?([A-z]+)\?")
+	statementAnswer = re.search(templateAnswer,input)
+	if statementAnswer:
+		statementExists = False
+		x = statementAnswer.group(3).lower()
+		y = statementAnswer.group(5).lower()
+		num = statementAnswer.group(1).lower()
 		if num == "is":
-			x_val = extract(0,Knowledge_Base,x)
-			y_val = extract(0,Knowledge_Base,y)
+			subject = extract(0,knowledgeBase,x)
+			target = extract(0,knowledgeBase,y)
 		else:
-			x_val = extract(1,Knowledge_Base,x)
-			y_val = extract(1,Knowledge_Base,y)
+			subject = extract(1,knowledgeBase,x)
+			target = extract(1,knowledgeBase,y)
 
-		if x_val == None or y_val == None or (Knowledge_Base[x_val].has_key(y_val) == False and checkStatement(Knowledge_Base,x_val,y_val) == False):
-			res = "I'm not sure given what you've told me so far"
-		elif checkStatement(Knowledge_Base,x_val,y_val) or Knowledge_Base[x_val][y_val] == True:
-			res = ("Yes.")
-		elif Knowledge_Base[x_val][y_val] == False:
-			res = ("No.")
-	case_enter_in = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
-	match_enter_in = re.search(case_enter_in,User_Input)
-	if match_enter_in:
-		Knowledge_Base = store_Knowledge_Base(Knowledge_Base,User_Input,1)
+		if subject == None or target == None or (knowledgeBase[subject].has_key(target) == False and verifyStatement(knowledgeBase,subject,target) == False):
+			response = "I'm not sure given what you've told me so far"
+		elif verifyStatement(knowledgeBase,subject,target) or knowledgeBase[subject][target] == True:
+			response = ("Yes.")
+		elif knowledgeBase[subject][target] == False:
+			response = ("No.")
+	fact = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
+	statement = re.search(fact,input)
+	if statement:
+		knowledgeBase = submitFact(knowledgeBase,input)
 	
 
-	if match_answer == None and match_enter_in == None and match_what == None and match_else == None:
-		res = ("I don't understand.")
-	return res
-
-
-
-
-
-
-
-
-
+	if statementAnswer == None and statement == None and statement == None and statementElse == None:
+		response = ("I don't understand.")
+	return response
