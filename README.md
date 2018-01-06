@@ -4,7 +4,7 @@ This fb messenger smartBot is chat bot that can learn facts that the user inputs
 
 Phrases that the smartBot can learn are in the following format. 
 
--  **(A/An) "X" is (not) (a/an) "Y"**  and  **"X" are (not) "Y"**
+-  "**(A/An) 'X' is (not) (a/an) 'Y'**" and  "**'X' are (not) 'Y'**"
    
    Ex. "A dog is a canine"   "Dogs are canines?"  "Roofus is a dog"
 
@@ -13,7 +13,7 @@ Phrases that the smartBot can learn are in the following format.
    The smartBot will respond "Got it" if the fact is new, and "I know" if that fact already exists in the          knowledge base.    
 
 
--  **Is (a/an) "X" (a/an) "Y"?** and  **Are "X" "Y"?**
+-  **"Is (a/an) 'X' (a/an) 'Y'?**" and  "**Are 'X' 'Y'?**"
    
    Ex. "Is a dog a canine?"   "Are dogs canines?"
 
@@ -24,7 +24,7 @@ Phrases that the smartBot can learn are in the following format.
    It will not matter whether the user enters their question in singular or plural form. 
 
    
--  **What do you know about "X"?**
+-  "**What do you know about 'X'?**"
    
    Ex. "What do you know about dogs?"
 
@@ -36,3 +36,5 @@ Phrases that the smartBot can learn are in the following format.
 
 
 Below is a sample conversation about how the smartBot will work
+<img width="532" alt="screen shot 2018-01-06 at 1 11 16 am" src="https://user-images.githubusercontent.com/12677361/34638350-8930c4a4-f27e-11e7-96a3-aeb7e4745465.png">
+
