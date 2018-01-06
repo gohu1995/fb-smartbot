@@ -1,7 +1,6 @@
 import re
 from pattern.en import pluralize, singularize
 
-
 def isVowel(val):
 	return val in ('a', 'e', 'i', 'o', 'u')
 
@@ -20,7 +19,6 @@ def verifyStatement(knowledgeBase,x,y):
 		return forwardSearch.has_key(y) or reverseSearch.has_key(y)
 
 
-
 def forwardInfer(isFoward,knowledgeBase,isMatch,statement):
 	if bool(knowledgeBase[isMatch]):
 		for fact in knowledgeBase[isMatch]:
@@ -30,7 +28,6 @@ def forwardInfer(isFoward,knowledgeBase,isMatch,statement):
 					forwardInfer(False,knowledgeBase,fact,statement)
 				elif knowledgeBase[isMatch][fact] == False  and isFoward == True:
 					statement[fact] = knowledgeBase[isMatch][fact]
-
 
 
 def backwardInfer(previousVal,nextVal,knowledgeBase,isMatch,statement):
@@ -43,23 +40,22 @@ def backwardInfer(previousVal,nextVal,knowledgeBase,isMatch,statement):
 					statement[previousVal] = knowledgeBase[nextVal][fact]
 
 
-
-def updateKB(knowledgeBase,x,y,relationship):
-	if getScenario(knowledgeBase,x) == 1:
-		response = x.title()
+def retrieveStatement(knowledgeBase,x,y,relationship):
+	response = x.title()
+	if getProperGrammar(knowledgeBase,x) == 1:
 		if relationship:
 			response +=" are"
 		else:
 			response += " are not"
-	elif getScenario(knowledgeBase,x) == 2:
+	elif getProperGrammar(knowledgeBase,x) == 2:
 		response = x.title()
 		if relationship:
 			response +=" is"
 		else:
 			response +=" is not"
-		if getScenario(knowledgeBase,y) == 1:
+		if getProperGrammar(knowledgeBase,y) == 1:
 			y = extract(1,knowledgeBase,y)[0]
-	elif getScenario(knowledgeBase,x) == 3:
+	elif getProperGrammar(knowledgeBase,x) == 3:
 		if isVowel(x[0]):
 			response = "An "+x
 		else:
@@ -68,7 +64,7 @@ def updateKB(knowledgeBase,x,y,relationship):
 			response +=" is"
 		else:
 			response +=" is not"
-	if getScenario(knowledgeBase,y) == 3:
+	if getProperGrammar(knowledgeBase,y) == 3:
 		if isVowel(y[0]):
 			response +=" an "
 			response += y
@@ -81,32 +77,28 @@ def updateKB(knowledgeBase,x,y,relationship):
 	return response
 
 
-
-def getScenario(knowledgeBase,fact):
+def getProperGrammar(knowledgeBase,entity):
 	for fact in knowledgeBase:
-		if fact[0] != fact and fact[1] == fact:
+		if fact[0] != entity and fact[1] == entity:
 			return 1
-		elif fact[0] == fact and fact[1] == fact:
+		elif fact[0] == entity and fact[1] == entity:
 			return 2
-		elif fact[1] != fact and fact[0] == fact:
+		elif fact[1] != entity and fact[0] == entity:
 			return 3
 	return None
 
 
-
-def extract(input,knowledgeBase,fact):
+def extract(userInput,knowledgeBase,userInputFact):
 	for fact in knowledgeBase:
-		if fact[input] == fact:
+		if fact[userInput] == userInputFact:
 			return fact
 	return None
 
 
-
-
-
-def submitFact(knowledgeBase,input):
+def submitFact(knowledgeBase,userInput):
 	template = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
-	statement = re.search(template,input)
+	statement = re.search(template,userInput)
+	response = "Got it"
 
 	if statement:
 		x = statement.group(2).lower()
@@ -115,51 +107,47 @@ def submitFact(knowledgeBase,input):
 			subject = extract(1,knowledgeBase,x)
 			target = extract(1,knowledgeBase,y)
 			if subject != None and target != None:
-				if bool(knowledgeBase[subject]) == False:
-					print ("Ok.")
-				elif knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
-					print ("I know.")
-				else:
-					print ("Ok.")
+				if knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
+					response = "I know."
+
 			if subject == None:
 				question = 'What is the singular form of '+statement.group(2)+ "?" +'\n'
-				singular = singularize(statement.group(2))
+				singular = singularize(statement.group(2)).lower()#raw_input(question).lower()
+				#print("Test: " + singular )
 				if singular == "na":	
 					subject = (x,x)
 				else:
 					subject = (singular,x)
 			if target == None:
 				question = 'What is the singular form of '+statement.group(6)+ "?" +'\n'
-				singularNegative = singularize(statement.group(6))
-				if singularNegative == "na":
+				singularTarget = singularize(statement.group(6)).lower()#raw_input(question).lower()
+				#print("Test: " + singularTarget )
+				if singularTarget == "na":
 					target = (y,y)
 				else:
-					target = (singularNegative,y)  
+					target = (singularTarget,y)  
+
 		elif statement.group(3) == "is":
 			subject = extract(0,knowledgeBase,x)
 			target = extract(0,knowledgeBase,y)
 			if subject != None and target != None:
-				if bool(knowledgeBase[subject]) == False:
-					print ("Ok.")
-				elif knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
-					print ("I know.")
-				else:
-					print ("Ok.")
+				if knowledgeBase[subject].has_key(target) or verifyStatement(knowledgeBase,subject,target):
+					response ="I know."
 			if subject == None:
 				question = 'What is the plural form of '+statement.group(2)+"?" +'\n'
-				plural = pluralize(statement.group(2))
-				print("Test: " + plural )
+				plural = pluralize(statement.group(2)).lower()
+				#print("Test: " + plural )
 				if plural == "na":
 					plural = x
 				subject = (x,plural)
 			if target == None:
 				question = 'What is the plural form of '+statement.group(6)+"?" +'\n'
-				pluralNegative = pluralize(statement.group(6))
-				print("Test: " + pluralNegative )
-				if pluralNegative == "na":
-					pluralNegative = y
-				target = (y,pluralNegative)
-			
+				pluralTarget = pluralize(statement.group(6)).lower()
+				#print("Test: " + pluralTarget )
+				if pluralTarget == "na":
+					pluralTarget = y
+				target = (y,pluralTarget)
+
 		if knowledgeBase.has_key(subject) == False:
 			knowledgeBase[subject] = {}
 		if knowledgeBase.has_key(target) == False:
@@ -168,19 +156,12 @@ def submitFact(knowledgeBase,input):
 			knowledgeBase[subject][target] = True
 		else :
 			knowledgeBase[subject][target] = False
-	return knowledgeBase
+	return response
 
 
-
-
-
-
-
-
-def run(input,knowledgeBase):
-
+def run(userInput,knowledgeBase):
 	template = re.compile("What do you know about ([A-z]+)?")
-	statement = re.search(template,input)
+	statement = re.search(template,userInput)
 	searchGraph = {}
 	reverseGraph = {}
 	response = "Got it!"
@@ -191,7 +172,7 @@ def run(input,knowledgeBase):
 		isNew = True
 		x = statement.group(1).lower()
 		subject = extract(0,knowledgeBase,x)
-		num = getScenario(knowledgeBase,x)
+		num = getProperGrammar(knowledgeBase,x)
 		if subject == None:
 			subject = extract(1,knowledgeBase,x)
 
@@ -207,71 +188,72 @@ def run(input,knowledgeBase):
 				y = regList[0]
 
 				
-				if getScenario(knowledgeBase,x):
-					response = updateKB(knowledgeBase,x.lower(),y[0][1],y[1])
+				if getProperGrammar(knowledgeBase,x):
+					response = retrieveStatement(knowledgeBase,x.lower(),y[0][1],y[1])
 					counter = counter + 1
 				else:
-					response = updateKB(knowledgeBase,x.lower(),y[0][0],y[1])
+					response = retrieveStatement(knowledgeBase,x.lower(),y[0][0],y[1])
 					counter = counter + 1
 			else:
 				isNew = False
 				revList = reverseGraph.items()
 				ans = statement.group(1)
 				y = revList[0]
-				if getScenario(knowledgeBase,x):
-					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
+				if getProperGrammar(knowledgeBase,x):
+					response = retrieveStatement(knowledgeBase,y[0][1],x.lower(),y[1])
 					counter = counter + 1
 				else:
-					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
+					response = retrieveStatement(knowledgeBase,y[0][0],x.lower(),y[1])
 					counter = counter + 1				
 		else:
 			response = "I don't know anything about " + x+"."
 
+		# Traverse graph to attain all the facts
+		regList = searchGraph.items()
+		revList = reverseGraph.items()
 
+		length = len(regList)-1
 
-	templateElse = re.compile("Anything else?")
-	statementElse = re.search(templateElse,input)
-
-	if statementElse and statementExists == True:
-		if isNew == True:
-			length = len(regList)-1
-			if counter <= length:
-				y = regList[c]
-				if getScenario(knowledgeBase,x):
-					response = updateKB(knowledgeBase,x.lower(),y[0][1],y[1])
-					counter = counter + 1
+		if isNew ==True: 
+			while counter <= length or counter-length-1 < len(revList):
+				if counter <= length:
+					y = regList[counter]
+					if getProperGrammar(knowledgeBase,x):
+						response += "\n" +retrieveStatement(knowledgeBase,x.lower(),y[0][1],y[1])
+						counter = counter + 1
+					else:
+						response += "\n" +retrieveStatement(knowledgeBase,x.lower(),y[0][0],y[1])
+						counter = counter + 1
+				elif counter-length-1 < len(revList):
+					y = revList[counter - length-1]
+					if getProperGrammar(knowledgeBase,x):
+						response += "\n" +retrieveStatement(knowledgeBase,y[0][1],x.lower(),y[1])
+						counter = counter + 1
+					else:
+						response += "\n" +retrieveStatement(knowledgeBase,y[0][0],x.lower(),y[1])
+						counter = counter + 1
 				else:
-					response = updateKB(knowledgeBase,x.lower(),y[0][0],y[1])
-					counter = counter + 1
-			elif c-length-1 < len(revList):
-				y = revList[counter - length-1]
-				if getScenario(knowledgeBase,x):
-					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
-					counter = counter + 1
-				else:
-					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
-					counter = counter + 1
-			else:
-				response = "I don't know anything else about "+x+"."
-				response = response
+					response += "I don't know anything else about "+x+"."
+					response += response
+
+
 		else:
-			length = len(revList)-1
-			if counter <= length:
-				y = revList[c]
-				if getScenario(knowledgeBase,x):
-					response = updateKB(knowledgeBase,y[0][1],x.lower(),y[1])
-					counter = counter + 1
+			while counter <= length:
+				if counter <= length:
+					y = revList[counter]
+					if getProperGrammar(knowledgeBase,x):
+						response += "\n" +retrieveStatement(knowledgeBase,y[0][1],x.lower(),y[1])
+						counter = counter + 1
+					else:
+						response += "\n" +retrieveStatement(knowledgeBase,y[0][0],x.lower(),y[1])
+						counter = counter + 1
 				else:
-					response = updateKB(knowledgeBase,y[0][0],x.lower(),y[1])
-					counter = counter + 1
-			else:
-				response = "I don't know anything else about "+x +"."
-				response = response
+					response += "I don't know anything else about "+x +"."
+					response += response	
+	# End
 
-
-
-	templateAnswer = re.compile("(Is|Are)+ (a |an )?([A-z]+) (a |an )?([A-z]+)\?")
-	statementAnswer = re.search(templateAnswer,input)
+	templateAnswer = re.compile("(Is|Are|is|are)+ (a |an )?([A-z]+) (a |an )?([A-z]+)(\?)?")
+	statementAnswer = re.search(templateAnswer,userInput)
 	if statementAnswer:
 		statementExists = False
 		x = statementAnswer.group(3).lower()
@@ -291,11 +273,14 @@ def run(input,knowledgeBase):
 		elif knowledgeBase[subject][target] == False:
 			response = ("No.")
 	fact = re.compile("(A |An )?([A-z]+) (is|are)+ (not )?(a |an )?([A-z]+)")
-	statement = re.search(fact,input)
-	if statement:
-		knowledgeBase = submitFact(knowledgeBase,input)
+	statementFact = re.search(fact,userInput)
+	if statementFact:
+		response = submitFact(knowledgeBase,userInput)
 	
 
-	if statementAnswer == None and statement == None and statement == None and statementElse == None:
+	if statementAnswer == None and statementFact == None and statement == None:
 		response = ("I don't understand.")
 	return response
+
+
+

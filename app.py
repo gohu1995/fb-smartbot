@@ -2,7 +2,7 @@ import os
 import sys
 import json
 from datetime import datetime
-import advicetaker
+import smartBot
 import pylibmc
 import os
 
@@ -76,7 +76,7 @@ def webhook():
 
 
                     kb = mc.get("kb")
-                    send = advicetaker.run(message_text,kb)
+                    send = smartBot.run(message_text,kb)
 
                     mc.set("kb",kb)
 
