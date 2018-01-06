@@ -17,8 +17,13 @@ Phrases that the smartBot can learn are in the following format.
 
    Even if it wasn't explicitly told the answer, the smartBot will be able to draw on inferences to answer the      question. For instance, if you told it "Dogs are canines" and "Canines are hairy", it will know that "Dogs      are Hairy"
    
+<<<<<<< HEAD
    It will not matter whether the user enters their question in singular or plural form. 
    
+=======
+   
+   It will not matter whether the user enters their question in singular or plural form. 
+>>>>>>> 01bea9b24ea73e7547492ca27fefd9c99433e124
    
 -  What do you know about <X>?
    Ex. "What do you know about dogs?"
